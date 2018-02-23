@@ -2064,6 +2064,30 @@ impl SslRef {
         }
     }
 
+    /// Exports keying material according to RFC5705.
+    ///
+    /// This corresponds to [`SSL_export_keying_material`].
+    ///
+    /// [`SSL_export_keying_material`]: https://www.openssl.org/docs/manmaster/man3/SSL_export_keying_material.html
+    pub fn export_keying_material(
+        &self,
+        out: &mut [u8],
+        label: &str,
+        context: &[u8]
+    ) -> Result<(), ErrorStack> {
+        unsafe {
+            let c_label = CString::new(label).unwrap();
+            let r = ffi::SSL_export_keying_material(self.as_ptr(),
+                                                    out.as_mut_ptr(), out.len() as usize,
+                                                    c_label.as_ptr(), label.len() as usize,
+                                                    context.as_ptr(), context.len() as usize, 1);
+            match r {
+                1 => Ok(()),
+                _ => Err(ErrorStack::get()),
+            }
+        }
+    }
+
     /// Returns a mutable reference to the X509 verification configuration.
     ///
     /// Requires OpenSSL 1.0.2, 1.1.0, or 1.1.1 and the corresponding Cargo feature.
